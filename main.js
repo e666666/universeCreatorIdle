@@ -159,6 +159,8 @@ function buyMK(tier) {
 			}
 		}
 	}
+	if (user["mk"+tier].cost.gte(Decimal.pow(10,308)) && gravCost.lte(Decimal.pow(10,308))) user["mk"+tier].costMult *= 2
+	//abv is init mult scale after e308
 	update();
 }
 
@@ -381,7 +383,7 @@ function gravityWellBoost(tier){
        	var w = user.wells.amount
 	var d = user.wells.defaultMults
 	var base = 2
-	if (user.points.upgrades.includes("GP42")) base = 2.1
+	if (user.points.upgrades.includes("GP42")) base = 2.2
 	var q = new Decimal(1)
 	if (user.points.upgrades.includes("GP61"))  q = Decimal.pow(1.5,Math.floor(w/5))
 	if (w<=d-1+tier) return Decimal.max(1,base**(w-tier+1)).times(q)//fifth is worse
@@ -439,13 +441,17 @@ function maxAll(){
 
 
 function sacPulses(amt){
-	if (user.pulse.amount>= amt){
+	if (user.pulse.amount>= amt+2 && amt > 0){
 		user.points.amount = user.points.amount.plus(amt)
 		user.pulse.amount = user.pulse.amount.minus(amt)
+		//remove the last amt elems from user.pulse.multipliers this is done by the .pop()
+		for (var i = 0; i<amt;i++){
+			user.pulse.multipliers.pop()
+		}
 	}
 }
 function sacMaxPulses(){
-	sacPulses(user.pulse.amount)
+	sacPulses(Math.max(0,user.pulse.amount-2))
 }
 
 
@@ -483,7 +489,7 @@ function baseMKproduction(tier){
 	var mult = user["mk"+tier].multiplier
 	mult = mult.times(gravityWellBoost(tier))
 	if (tier == 9 && (user.points.upgrades.includes("GP41"))) mult = mult.times(2)
-	mult = mult.times(Decimal.pow(1+1/tier,user.wells.defaultMults-4))
+	mult = mult.times(Decimal.pow(1+2/tier,user.wells.defaultMults-4))
 	//put additional mults here
 	if (user.points.upgrades.includes("GP82")) {
 		if (user["mk"+tier].amount == 0) return new Decimal (0)
@@ -496,7 +502,7 @@ function baseMKmult(tier){
 	var mult = user["mk"+tier].multiplier
 	mult = mult.times(gravityWellBoost(tier))
 	if (tier == 9 && (user.points.upgrades.includes("GP41"))) mult = mult.times(2)
-	mult = mult.times(Decimal.pow(1+1/tier,user.wells.defaultMults-4))
+	mult = mult.times(Decimal.pow(1+2/tier,user.wells.defaultMults-4))
 	//put additional mults here
 	return mult
 	
